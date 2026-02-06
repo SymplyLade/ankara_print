@@ -1,0 +1,61 @@
+/* src/styles/LevelSelector.css */
+
+.level-selector {
+  text-align: center;
+  margin: 20px;
+}
+
+.level-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.level-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.level-button:hover {
+  background: #e0e0e0;
+}
+
+.level-button.selected {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.level-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.start-chat-btn {
+  background: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.start-chat-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.info-btn {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}

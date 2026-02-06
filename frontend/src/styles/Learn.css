@@ -1,0 +1,29 @@
+/* Ensure full page layout */
+.learn-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Content spacing */
+.learn-content {
+  flex: 1;
+  padding: 100px 20px 50px; /* top padding for navbar */
+  text-align: center;
+}
+
+/* Chatbot container inside Learn page */
+.learn-chatbot {
+  margin-top: 30px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Make Chatbot scrollable if large */
+.learn-chatbot .chatbot-container {
+  position: relative; /* not fixed */
+  height: 500px; /* or auto */
+  max-height: 80vh;
+  overflow-y: auto;
+}

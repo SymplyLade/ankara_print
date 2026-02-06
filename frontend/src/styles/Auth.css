@@ -74,3 +74,110 @@
 .back-home a:hover {
   text-decoration: underline;
 }
+
+/* Auth.css */
+
+/* Container */
+.auth-container {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  border-radius: 15px;
+  background: #cabca1; /* light Ankara-style off-white background */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Headings */
+.auth-container h2 {
+  margin-bottom: 20px;
+  color: #222;
+  font-size: 1.8rem;
+}
+
+/* Inputs */
+.auth-input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 10px 0;
+  border: 2px solid #2563eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #1dd1a1;
+  box-shadow: 0 0 8px rgba(29, 209, 161, 0.4);
+}
+
+/* Login Button */
+.auth-button {
+  width: 100%;
+  padding: 12px 0;
+  margin-top: 15px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(45deg, #ff6b6b, #feca57, #1dd1a1, #54a0ff);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.auth-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Footer Links */
+.auth-footer {
+  margin-top: 20px;
+  font-size: 0.9rem;
+}
+
+.auth-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Logout Button */
+.auth-logout {
+  margin-top: 15px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(45deg, #ff6b6b, #feca57, #1dd1a1, #54a0ff);
+  color:white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.auth-logout:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* Messages */
+.auth-message {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.auth-message.success {
+  color: #1dd1a1;
+}
+
+.auth-message.error {
+  color: #ff4757;
+}
+
