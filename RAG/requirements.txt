@@ -13,3 +13,4 @@ pydantic
 pydantic-settings
 google-generativeai
 chromadb
+langchain_huggingface
