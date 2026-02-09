@@ -104,8 +104,115 @@
 
 
 
+// import React from "react";
+// import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// import Navbar from "./components/Navbar";
+// import Footer from "./components/Footer";
+// import Landing from "./pages/Landing";
+// import About from "./pages/About";
+// import Gallery from "./pages/Gallery";
+// import Contact from "./pages/Contact";
+// import Signup from "./pages/Signup";
+// import Login from "./pages/Login";
+// import ForgotPassword from "./pages/ForgotPassword";
+// import Dashboard from "./pages/Dashboard"; 
+// import Chatbot from "./components/Chatbot";
+// import Learn from "./pages/Learn";
+// import BookTutor from "./pages/BookTutor";
+
+// function App() {
+//   return (
+//     <Router>
+//       <div className="app-wrapper">
+//         <Navbar />
+
+//         <main className="app-content">
+//           <Routes>
+//             <Route path="/" element={<Landing />} />
+//             <Route path="/about" element={<About />} />
+//             <Route path="/gallery" element={<Gallery />} />
+//             <Route path="/contact" element={<Contact />} />
+//             <Route path="/signup" element={<Signup />} />
+//             <Route path="/login" element={<Login />} />
+//             <Route path="/forgot-password" element={<ForgotPassword />} />
+//             <Route path="/dashboard" element={<Dashboard />} />
+//             <Route path="/chatbot" element={<Chatbot />} />
+//             <Route path="/learn" element={<Learn />} />
+//             <Route path="/book-tutor" element={<BookTutor />} />
+//           </Routes>
+//         </main>
+
+//         <Footer />
+//       </div>
+//     </Router>
+//   );
+// }
+
+// export default App;
+
+
+
+// import React from "react";
+// import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+// import Navbar from "./components/Navbar";
+// import Footer from "./components/Footer";
+// import Landing from "./pages/Landing";
+// import About from "./pages/About";
+// import Gallery from "./pages/Gallery";
+// import Contact from "./pages/Contact";
+// import Signup from "./pages/Signup";
+// import Login from "./pages/Login";
+// import ForgotPassword from "./pages/ForgotPassword";
+// import Dashboard from "./pages/Dashboard"; 
+// import Chatbot from "./components/Chatbot";
+// import Learn from "./pages/Learn";
+// import BookTutor from "./pages/BookTutor";
+
+// // Wrapper to conditionally render Navbar
+// const NavbarWrapper = () => {
+//   const location = useLocation();
+
+//   // Only show Navbar on these paths
+//   const showNavbar = ["/about", "/gallery", "/contact"].includes(location.pathname);
+
+//   return showNavbar ? <Navbar showAuthButtons={location.pathname === "/"} /> : null;
+// };
+
+// function App() {
+//   return (
+//     <Router>
+//       <div className="app-wrapper">
+//         <NavbarWrapper />
+
+//         <main className="app-content">
+//           <Routes>
+//             <Route path="/" element={<Landing />} />
+//             <Route path="/about" element={<About />} />
+//             <Route path="/gallery" element={<Gallery />} />
+//             <Route path="/contact" element={<Contact />} />
+//             <Route path="/signup" element={<Signup />} />
+//             <Route path="/login" element={<Login />} />
+//             <Route path="/forgot-password" element={<ForgotPassword />} />
+//             <Route path="/dashboard" element={<Dashboard />} />
+//             <Route path="/chatbot" element={<Chatbot />} />
+//             <Route path="/learn" element={<Learn />} />
+//             <Route path="/book-tutor" element={<BookTutor />} />
+//           </Routes>
+//         </main>
+
+//         <Footer />
+//       </div>
+//     </Router>
+//   );
+// }
+
+// export default App;
+
+
+
+
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Landing from "./pages/Landing";
@@ -120,11 +227,21 @@ import Chatbot from "./components/Chatbot";
 import Learn from "./pages/Learn";
 import BookTutor from "./pages/BookTutor";
 
+// Wrapper to conditionally render Navbar
+const NavbarWrapper = () => {
+  const location = useLocation();
+
+  // Only show Navbar on these paths
+  const showNavbar = ["/", "/about", "/gallery", "/contact"].includes(location.pathname);
+
+  return showNavbar ? <Navbar showAuthButtons={location.pathname === "/"} /> : null;
+};
+
 function App() {
   return (
     <Router>
       <div className="app-wrapper">
-        <Navbar />
+        <NavbarWrapper />
 
         <main className="app-content">
           <Routes>

@@ -1,5 +1,18 @@
 {
+  "name": "ankara_project",
+  "version": "1.0.0",
+  "private": true,
   "dependencies": {
-    "react-router-dom": "^7.13.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "^5.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "scripts": {
+    "start": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
+    "start-frontend": "cd frontend && npm install && npm run dev",
+    "start-backend": "cd backend && pip install -r requirements.txt && uvicorn main:app --reload --host 0.0.0.0 --port 8001"
   }
 }

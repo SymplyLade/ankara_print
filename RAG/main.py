@@ -361,4 +361,4 @@ if __name__ == "__main__":
     print("\nStarting FastAPI server...")
     print("API will be available at: http://localhost:8001")
     print("API Docs at: http://localhost:8001/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8001)  # host=0.0.0.0 allows connections from frontend
+    uvicorn.run(app, host="127.0.0.1", port=8001)  # host=0.0.0.0 allows connections from frontend

@@ -77,6 +77,113 @@
 // export default Navbar;
 
 
+// import React from "react";
+// import { Link, useNavigate, useLocation } from "react-router-dom";
+// import "../styles/Navbar.css";
+
+// const Navbar = () => {
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   return (
+//     <nav className="navbar">
+//       <div className="navbar-left">
+//         {/* Back Button: show on all pages except home */}
+//         {location.pathname !== "/" && (
+//           <button
+//             className="back-btn"
+//             onClick={() => navigate(-1)}
+//           >
+//             ← Back
+//           </button>
+//         )}
+
+//         {/* Logo image */}
+//         <Link to="/">
+//           <img
+//             src="/images/Gemini_Generated_Image_di93fcdi93fcdi93.png"
+//             alt="AnkaraPrint Learning Logo"
+//             className="logo-image"
+//           />
+//         </Link>
+//       </div>
+
+//       <div className="navbar-right">
+//         <Link to="/" className="nav-link">Home</Link>
+//         <Link to="/about" className="nav-link">About</Link>
+//         <Link to="/gallery" className="nav-link">Gallery</Link>
+//         <Link to="/contact" className="nav-link">Contact</Link>
+//         <Link to="/signup" className="nav-link signup-btn">Signup</Link>
+//         <Link to="/login" className="nav-link login-btn">Login</Link>
+//       </div>
+//     </nav>
+//   );
+// };
+
+// export default Navbar;
+
+
+
+// import React from "react";
+// import { Link, useNavigate, useLocation } from "react-router-dom";
+// import "../styles/Navbar.css";
+
+// const Navbar = () => {
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   // Show Navbar only on these paths
+//   const showNavbar = ["/about", "/gallery", "/contact", "/"].includes(location.pathname);
+
+//   if (!showNavbar) return null; // Hide Navbar on other pages
+
+//   // Only show signup/login buttons on home page
+//   const showAuthButtons = location.pathname === "/";
+
+//   return (
+//     <nav className="navbar">
+//       <div className="navbar-left">
+//         {/* Back Button: show on all pages except home */}
+//         {location.pathname !== "/" && (
+//           <button
+//             className="back-btn"
+//             onClick={() => navigate(-1)}
+//           >
+//             ← Back
+//           </button>
+//         )}
+
+//         {/* Logo image */}
+//         <Link to="/">
+//           <img
+//             src="/images/Gemini_Generated_Image_di93fcdi93fcdi93.png"
+//             alt="AnkaraPrint Learning Logo"
+//             className="logo-image"
+//           />
+//         </Link>
+//       </div>
+
+//       <div className="navbar-right">
+//         <Link to="/" className="nav-link">Home</Link>
+//         <Link to="/about" className="nav-link">About</Link>
+//         <Link to="/gallery" className="nav-link">Gallery</Link>
+//         <Link to="/contact" className="nav-link">Contact</Link>
+
+//         {showAuthButtons && (
+//           <>
+//             <Link to="/signup" className="nav-link signup-btn">Signup</Link>
+//             <Link to="/login" className="nav-link login-btn">Login</Link>
+//           </>
+//         )}
+//       </div>
+//     </nav>
+//   );
+// };
+
+// export default Navbar;
+
+
+
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../styles/Navbar.css";
@@ -85,20 +192,28 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const pathname = location.pathname;
+
+  // Show Navbar only on certain pages
+  const navbarPages = ["/", "/about", "/gallery", "/contact"];
+  const showNavbar = navbarPages.includes(pathname);
+
+  if (!showNavbar) return null; // hide Navbar on all other pages
+
+  // Only show signup/login buttons on home page
+  const showAuthButtons = pathname === "/";
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        {/* Back Button: show on all pages except home */}
-        {location.pathname !== "/" && (
-          <button
-            className="back-btn"
-            onClick={() => navigate(-1)}
-          >
+        {/* Back button: show on all pages except home */}
+        {pathname !== "/" && (
+          <button className="back-btn" onClick={() => navigate(-1)}>
             ← Back
           </button>
         )}
 
-        {/* Logo image */}
+        {/* Logo */}
         <Link to="/">
           <img
             src="/images/Gemini_Generated_Image_di93fcdi93fcdi93.png"
@@ -113,8 +228,13 @@ const Navbar = () => {
         <Link to="/about" className="nav-link">About</Link>
         <Link to="/gallery" className="nav-link">Gallery</Link>
         <Link to="/contact" className="nav-link">Contact</Link>
-        <Link to="/signup" className="nav-link signup-btn">Signup</Link>
-        <Link to="/login" className="nav-link login-btn">Login</Link>
+
+        {showAuthButtons && (
+          <>
+            <Link to="/signup" className="nav-link signup-btn">Signup</Link>
+            <Link to="/login" className="nav-link login-btn">Login</Link>
+          </>
+        )}
       </div>
     </nav>
   );
