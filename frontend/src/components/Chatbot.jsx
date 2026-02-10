@@ -502,7 +502,9 @@
 
 
 
+
 import React, { useState, useRef, useEffect } from "react";
+import "../styles/Chatbot.css";
 import LevelSelector from "./LevelSelector";
 import InfoSection from "./InfoSection";
 import MessageBubble from "./MessageBubble";
@@ -519,14 +521,12 @@ const Chatbot = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [systemReady, setSystemReady] = useState(false);
-  const [pdfWarningShown, setPdfWarningShown] = useState(false); // NEW: track PDF warning
   const chatEndRef = useRef(null);
 
-  // Poll backend every 2s to check if PDF is loaded
+  // Check if RAG system is ready on mount
   useEffect(() => {
-    const interval = setInterval(checkSystemStatus, 2000);
-    return () => clearInterval(interval);
-  }, [pdfWarningShown]); // depend on flag
+    checkSystemStatus();
+  }, []);
 
   // Auto-scroll to newest message
   useEffect(() => {
@@ -536,91 +536,104 @@ const Chatbot = () => {
   // Check RAG system status
   const checkSystemStatus = async () => {
     try {
-      const res = await fetch(`${RAG_API_URL}/api/status`);
-      const data = await res.json();
+      const response = await fetch(`${RAG_API_URL}/api/status`);
+      const data = await response.json();
 
-      const ready = data.pdf_loaded && data.llm_connected;
-      setSystemReady(ready);
+      // System is ready if backend is online and LLM is connected
+      setSystemReady(data.status === "online" && data.llm_connected);
 
-      // Show PDF warning only once
-      if (!data.pdf_loaded && !pdfWarningShown) {
-        setMessages(prev => [
+      if (!data.pdf_loaded) {
+        setMessages((prev) => [
           ...prev,
-          { id: Date.now(), sender: "bot", text: "⚠️ PDF document is not loaded. Please upload a PDF to start." }
-        ]);
-        setPdfWarningShown(true);
-      }
-    } catch (err) {
-      console.error("RAG backend unreachable:", err);
-      if (!messages.some(m => m.text.includes("Cannot connect to RAG backend"))) {
-        setMessages(prev => [
-          ...prev,
-          { id: Date.now(), sender: "bot", text: "❌ Cannot connect to RAG backend. Make sure it's running." }
+          {
+            id: Date.now(),
+            sender: "bot",
+            text: "ℹ️ System loaded with default Ankara Print knowledge base. You can ask questions now, or upload your own PDF to add more context."
+          }
         ]);
       }
+    } catch (error) {
+      console.error("RAG system unreachable:", error);
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), sender: "bot", text: "❌ Cannot connect to RAG backend. Make sure it's running." }
+      ]);
     }
   };
 
-  // Send question to RAG
+  // Handle sending text messages to RAG
   const handleSend = async () => {
     if (!input.trim() || !systemReady) return;
 
     const userMessage = { id: Date.now(), sender: "user", text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const userInput = input;
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch(`${RAG_API_URL}/api/chat`, {
+      const response = await fetch(`${RAG_API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userInput })
+        body: JSON.stringify({ message: userInput })
       });
 
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
-      const data = await res.json();
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
 
-      setMessages(prev => [
+      const data = await response.json();
+      const botMessage = {
+        id: Date.now() + 1,
+        sender: "bot",
+        text: data.response,
+        sources: data.sources
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: data.answer, sources: data.sources }
-      ]);
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message. Try again." }
+        { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message. Please try again." }
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle PDF upload
+  // Handle file upload
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setMessages(prev => [...prev, { id: Date.now(), sender: "user", text: `📄 Uploading: ${file.name}...`, file }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), sender: "user", text: `📄 Uploading: ${file.name}...`, file }
+    ]);
     setLoading(true);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`${RAG_API_URL}/api/upload-pdf`, { method: "POST", body: formData });
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const response = await fetch(`${RAG_API_URL}/api/upload-pdf`, {
+        method: "POST",
+        body: formData
+      });
 
-      const data = await res.json();
-      setMessages(prev => [
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+
+      const data = await response.json();
+      setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: `✅ PDF uploaded! ${data.chunks_created} document chunks created.` }
+        {
+          id: Date.now() + 1,
+          sender: "bot",
+          text: `✅ PDF uploaded successfully! Created ${data.chunks_created} document chunks. Ready to answer questions!`
+        }
       ]);
       setSystemReady(true);
-      setPdfWarningShown(true); // mark PDF warning as shown to prevent duplicates
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setMessages((prev) => [
         ...prev,
         { id: Date.now() + 1, sender: "bot", text: "❌ Failed to upload PDF. Please try again." }
       ]);
@@ -631,49 +644,39 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-blue-600 text-white p-4 font-bold text-lg">
-        AI Chatbot
-        <span className={systemReady ? "text-green-400" : "text-yellow-400"}>●</span>
+    <div className="chatbot-container">
+      <BackButton />
+      <div className="chatbot-header">
+        AI Chatbot 
+        {systemReady ? (
+          <span style={{ marginLeft: "10px", color: "#4CAF50" }}>●</span>
+        ) : (
+          <span style={{ marginLeft: "10px", color: "#ff9800" }}>●</span>
+        )}
       </div>
 
-      {/* Level selector or Info */}
       {!level && !showInfo && <LevelSelector setLevel={setLevel} setShowInfo={setShowInfo} />}
       {showInfo && <InfoSection setShowInfo={setShowInfo} />}
 
-      {/* Chatbox */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-2 bg-gray-50">
-        {messages.map(msg => (
+      <div className="chatbot-chatbox">
+        {messages.map((msg) => (
           <MessageBubble key={msg.id} sender={msg.sender} text={msg.text} sources={msg.sources} file={msg.file} />
         ))}
-        {loading && <div className="text-center text-gray-500">⏳ Processing...</div>}
+        {loading && <div className="loading-indicator">⏳ Processing...</div>}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input area */}
-      <div className="flex p-4 bg-gray-100 items-center space-x-2">
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={handleFileUpload}
-          disabled={loading}
-          className="border rounded p-2"
-        />
+      <div className="chatbot-input-area">
+        <input type="file" onChange={handleFileUpload} accept=".pdf" disabled={loading} style={{ marginRight: "8px" }} />
         <input
           type="text"
-          value={input}
           placeholder={level ? (systemReady ? "Ask a question..." : "System loading...") : "Select a level first"}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSend()}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
           disabled={!level || !systemReady || loading}
-          className="flex-1 border rounded p-2"
         />
-        <button
-          onClick={handleSend}
-          disabled={!level || !systemReady || loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
+        <button onClick={handleSend} disabled={!level || !systemReady || loading}>
           {loading ? "Sending..." : "Send"}
         </button>
       </div>
