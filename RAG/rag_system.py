@@ -208,6 +208,7 @@ class AnkaraPrintRAGSystem:
 
     def get_system_status(self):
         return {
+            "status": "online",
             "pdf_loaded": self.pdf_loaded,
             "vector_db_ready": self.vector_db_ready,
             "llm_connected": self.llm_connected,
