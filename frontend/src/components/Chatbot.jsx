@@ -498,7 +498,195 @@
 //   );
 // };
 
+// // export default Chatbot;
+
+
+// import React, { useState, useRef, useEffect } from "react";
+// import "../styles/Chatbot.css";
+// import LevelSelector from "./LevelSelector";
+// import InfoSection from "./InfoSection";
+// import MessageBubble from "./MessageBubble";
+// import BackButton from "./BackButton";
+
+// const RAG_API_URL = import.meta.env.VITE_RAG_API_URL || "http://localhost:8001";
+
+// const Chatbot = () => {
+//   const [messages, setMessages] = useState([
+//     { id: 1, sender: "bot", text: "Hi! 👋 I'm your assistant. How can I help you today?" }
+//   ]);
+//   const [input, setInput] = useState("");
+//   const [level, setLevel] = useState("");
+//   const [showInfo, setShowInfo] = useState(false);
+//   const [loading, setLoading] = useState(false);
+//   const [systemReady, setSystemReady] = useState(false);
+//   const [welcomeShown, setWelcomeShown] = useState(false);
+//   const chatEndRef = useRef(null);
+
+//   useEffect(() => {
+//     checkSystemStatus();
+//   }, []);
+
+//   useEffect(() => {
+//     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages]);
+
+//   // 🔁 Keep checking backend until ready
+//   const checkSystemStatus = async () => {
+//     try {
+//       const response = await fetch(`${RAG_API_URL}/api/status`);
+//       const data = await response.json();
+
+//       // SIMPLIFIED: If backend responds, we treat as ready
+//       if (data.status === "online" || data.ready === true) {
+//         setSystemReady(true);
+
+//         if (!welcomeShown) {
+//           setMessages((prev) => [
+//             ...prev,
+//             {
+//               id: Date.now(),
+//               sender: "bot",
+//               text:
+//                "ℹ️ System loaded with default Ankara Print knowledge base. You can ask questions now, or upload your own PDF to add more context."
+//             }
+//           ]);
+//           setWelcomeShown(true);
+//         }
+//       } else {
+//         setTimeout(checkSystemStatus, 2000000);
+//       }
+//     } catch (error) {
+//       console.log("Backend not reachable, retrying...");
+//       setTimeout(checkSystemStatus, 2000000);
+//     }
+//   };
+
+//   checkSystemStatus();
+
+//   const handleSend = async () => {
+//     if (!input.trim() || !systemReady) return;
+
+//     const userMessage = { id: Date.now(), sender: "user", text: input };
+//     setMessages((prev) => [...prev, userMessage]);
+//     const userInput = input;
+//     setInput("");
+//     setLoading(true);
+
+//     try {
+//       const response = await fetch(`${RAG_API_URL}/api/chat`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ message: userInput })
+//       });
+
+//       if (!response.ok) throw new Error();
+
+//       const data = await response.json();
+//       const botMessage = {
+//         id: Date.now() + 1,
+//         sender: "bot",
+//         text: data.response,
+//         sources: data.sources
+//       };
+
+//       setMessages((prev) => [...prev, botMessage]);
+//     } catch {
+//       setMessages((prev) => [
+//         ...prev,
+//         { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message." }
+//       ]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleFileUpload = async (e) => {
+//     const file = e.target.files[0];
+//     if (!file) return;
+
+//     setMessages((prev) => [
+//       ...prev,
+//       { id: Date.now(), sender: "user", text: `📄 Uploading: ${file.name}...`, file }
+//     ]);
+//     setLoading(true);
+
+//     try {
+//       const formData = new FormData();
+//       formData.append("file", file);
+
+//       const response = await fetch(`${RAG_API_URL}/api/upload-pdf`, {
+//         method: "POST",
+//         body: formData
+//       });
+
+//       const data = await response.json();
+
+//       setMessages((prev) => [
+//         ...prev,
+//         {
+//           id: Date.now() + 1,
+//           sender: "bot",
+//           text: `✅ PDF uploaded! Created ${data.chunks_created} chunks.`
+//         }
+//       ]);
+
+//       setSystemReady(true);
+//     } catch {
+//       setMessages((prev) => [
+//         ...prev,
+//         { id: Date.now() + 1, sender: "bot", text: "❌ Failed to upload PDF." }
+//       ]);
+//     } finally {
+//       setLoading(false);
+//       e.target.value = null;
+//     }
+//   };
+
+//   return (
+//     <div className="chatbot-container">
+//       <BackButton />
+
+//       <div className="chatbot-header">
+//         AI Chatbot
+//         <span style={{ marginLeft: "10px", color: systemReady ? "#4CAF50" : "#ff9800" }}>
+//           ●
+//         </span>
+//       </div>
+
+//       {!level && !showInfo && <LevelSelector setLevel={setLevel} setShowInfo={setShowInfo} />}
+//       {showInfo && <InfoSection setShowInfo={setShowInfo} />}
+
+//       <div className="chatbot-chatbox">
+//         {messages.map((msg) => (
+//           <MessageBubble key={msg.id} sender={msg.sender} text={msg.text} sources={msg.sources} file={msg.file} />
+//         ))}
+//         {loading && <div className="loading-indicator">⏳ Processing...</div>}
+//         {!systemReady && <div className="loading-indicator">🔄 Initializing AI system...</div>}
+//         <div ref={chatEndRef} />
+//       </div>
+
+//       <div className="chatbot-input-area">
+//         <input type="file" onChange={handleFileUpload} accept=".pdf" disabled={loading} />
+//         <input
+//           type="text"
+//           placeholder={
+//             level ? (systemReady ? "Ask a question..." : "System loading...") : "Select a level first"
+//           }
+//           value={input}
+//           onChange={(e) => setInput(e.target.value)}
+//           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+//           disabled={!level || !systemReady || loading}
+//         />
+//         <button onClick={handleSend} disabled={!level || !systemReady || loading}>
+//           {loading ? "Sending..." : "Send"}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
 // export default Chatbot;
+
 
 
 import React, { useState, useRef, useEffect } from "react";
@@ -536,28 +724,15 @@ const Chatbot = () => {
       const response = await fetch(`${RAG_API_URL}/api/status`);
       const data = await response.json();
 
-      // SIMPLIFIED: If backend responds, we treat as ready
       if (data.status === "online" || data.ready === true) {
         setSystemReady(true);
-
-        if (!welcomeShown) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: "bot",
-              text:
-                "ℹ️ System loaded with default Ankara Print knowledge base. You can ask questions now, or upload your own PDF to add more context."
-            }
-          ]);
-          setWelcomeShown(true);
-        }
+        setWelcomeShown(true); // prevents repeated logic
       } else {
-        setTimeout(checkSystemStatus, 2000);
+        setTimeout(checkSystemStatus, 2000000);
       }
     } catch (error) {
       console.log("Backend not reachable, retrying...");
-      setTimeout(checkSystemStatus, 2000);
+      setTimeout(checkSystemStatus, 2000000);
     }
   };
 
