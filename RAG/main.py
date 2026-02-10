@@ -383,17 +383,43 @@ from rag_system import create_default_rag  # Uses AnkaraPrintRAGSystem
 rag_system = None
 
 # App lifespan - initialize RAG system on startup
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     global rag_system
+#     try:
+#         print("\n" + "="*60)
+#         print("ANKARAPRINT RAG SYSTEM STARTING...")
+#         print("="*60)
+#         # Lazy load on first request to save memory
+#         yield
+#     finally:
+#         print("Shutting down AnkaraPrint RAG system...")
+@app.get("/status")
+def status():
+    return {
+        "ready": rag_system is not None
+    }
+
+
+rag_system = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global rag_system
+    print("Initializing RAG system...")
+
     try:
-        print("\n" + "="*60)
-        print("ANKARAPRINT RAG SYSTEM STARTING...")
-        print("="*60)
-        # Lazy load on first request to save memory
-        yield
-    finally:
-        print("Shutting down AnkaraPrint RAG system...")
+        rag_system = create_default_rag()
+        print("RAG system loaded successfully.")
+    except Exception as e:
+        print("RAG failed to load:", e)
+        rag_system = None  # allow app to run anyway
+
+    yield
+    print("Shutting down...")
+
+app = FastAPI(lifespan=lifespan)
+
 
 # FastAPI app
 app = FastAPI(
