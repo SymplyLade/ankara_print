@@ -502,8 +502,6 @@
 
 
 
-
-
 import React, { useState, useRef, useEffect } from "react";
 import LevelSelector from "./LevelSelector";
 import InfoSection from "./InfoSection";
@@ -521,13 +519,14 @@ const Chatbot = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [systemReady, setSystemReady] = useState(false);
+  const [pdfWarningShown, setPdfWarningShown] = useState(false); // NEW: track PDF warning
   const chatEndRef = useRef(null);
 
   // Poll backend every 2s to check if PDF is loaded
   useEffect(() => {
     const interval = setInterval(checkSystemStatus, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pdfWarningShown]); // depend on flag
 
   // Auto-scroll to newest message
   useEffect(() => {
@@ -540,16 +539,16 @@ const Chatbot = () => {
       const res = await fetch(`${RAG_API_URL}/api/status`);
       const data = await res.json();
 
-      // Update systemReady
       const ready = data.pdf_loaded && data.llm_connected;
       setSystemReady(ready);
 
-      // Show PDF warning once if not loaded
-      if (!data.pdf_loaded && !messages.some(m => m.text.includes("PDF document is not loaded"))) {
+      // Show PDF warning only once
+      if (!data.pdf_loaded && !pdfWarningShown) {
         setMessages(prev => [
           ...prev,
           { id: Date.now(), sender: "bot", text: "⚠️ PDF document is not loaded. Please upload a PDF to start." }
         ]);
+        setPdfWarningShown(true);
       }
     } catch (err) {
       console.error("RAG backend unreachable:", err);
@@ -576,7 +575,7 @@ const Chatbot = () => {
       const res = await fetch(`${RAG_API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userInput }) // note: 'question' key matches your backend
+        body: JSON.stringify({ question: userInput })
       });
 
       if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -618,6 +617,7 @@ const Chatbot = () => {
         { id: Date.now() + 1, sender: "bot", text: `✅ PDF uploaded! ${data.chunks_created} document chunks created.` }
       ]);
       setSystemReady(true);
+      setPdfWarningShown(true); // mark PDF warning as shown to prevent duplicates
     } catch (err) {
       console.error(err);
       setMessages(prev => [
