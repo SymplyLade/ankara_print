@@ -382,6 +382,8 @@ from rag_system import create_default_rag  # Uses AnkaraPrintRAGSystem
 # Global RAG system reference (lazy loaded)
 rag_system = None
 
+app = FastAPI()
+
 # App lifespan - initialize RAG system on startup
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -543,7 +545,7 @@ async def test_endpoint():
 # -------------------
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))  # Use Render's port
+    port = int(os.environ.get("PORT", 8001))  # Use Render's port
     print(f"\nStarting FastAPI server on port {port}...")
     uvicorn.run("main:app", host="0.0.0.0", port=port)  # remove --reload for production
 
