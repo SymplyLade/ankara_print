@@ -501,8 +501,6 @@
 // export default Chatbot;
 
 
-
-
 import React, { useState, useRef, useEffect } from "react";
 import "../styles/Chatbot.css";
 import LevelSelector from "./LevelSelector";
@@ -521,47 +519,48 @@ const Chatbot = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [systemReady, setSystemReady] = useState(false);
+  const [welcomeShown, setWelcomeShown] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Check if RAG system is ready on mount
   useEffect(() => {
     checkSystemStatus();
   }, []);
 
-  // Auto-scroll to newest message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Check RAG system status
+  // 🔁 Keep checking backend until ready
   const checkSystemStatus = async () => {
     try {
       const response = await fetch(`${RAG_API_URL}/api/status`);
       const data = await response.json();
 
-      // System is ready if backend is online and LLM is connected
-      setSystemReady(data.status === "online" && data.llm_connected);
+      // SIMPLIFIED: If backend responds, we treat as ready
+      if (data.status === "online" || data.ready === true) {
+        setSystemReady(true);
 
-      if (!data.pdf_loaded) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            sender: "bot",
-            text: "ℹ️ System loaded with default Ankara Print knowledge base. You can ask questions now, or upload your own PDF to add more context."
-          }
-        ]);
+        if (!welcomeShown) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "bot",
+              text:
+                "ℹ️ System loaded with default Ankara Print knowledge base. You can ask questions now, or upload your own PDF to add more context."
+            }
+          ]);
+          setWelcomeShown(true);
+        }
+      } else {
+        setTimeout(checkSystemStatus, 2000);
       }
     } catch (error) {
-      console.error("RAG system unreachable:", error);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now(), sender: "bot", text: "❌ Cannot connect to RAG backend. Make sure it's running." }
-      ]);
+      console.log("Backend not reachable, retrying...");
+      setTimeout(checkSystemStatus, 2000);
     }
   };
 
-  // Handle sending text messages to RAG
   const handleSend = async () => {
     if (!input.trim() || !systemReady) return;
 
@@ -578,7 +577,7 @@ const Chatbot = () => {
         body: JSON.stringify({ message: userInput })
       });
 
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      if (!response.ok) throw new Error();
 
       const data = await response.json();
       const botMessage = {
@@ -587,19 +586,18 @@ const Chatbot = () => {
         text: data.response,
         sources: data.sources
       };
+
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
-      console.error("Error sending message:", error);
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message. Please try again." }
+        { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message." }
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle file upload
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -619,23 +617,22 @@ const Chatbot = () => {
         body: formData
       });
 
-      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-
       const data = await response.json();
+
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: "bot",
-          text: `✅ PDF uploaded successfully! Created ${data.chunks_created} document chunks. Ready to answer questions!`
+          text: `✅ PDF uploaded! Created ${data.chunks_created} chunks.`
         }
       ]);
+
       setSystemReady(true);
-    } catch (error) {
-      console.error("Error uploading file:", error);
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: "❌ Failed to upload PDF. Please try again." }
+        { id: Date.now() + 1, sender: "bot", text: "❌ Failed to upload PDF." }
       ]);
     } finally {
       setLoading(false);
@@ -646,13 +643,12 @@ const Chatbot = () => {
   return (
     <div className="chatbot-container">
       <BackButton />
+
       <div className="chatbot-header">
-        AI Chatbot 
-        {systemReady ? (
-          <span style={{ marginLeft: "10px", color: "#4CAF50" }}>●</span>
-        ) : (
-          <span style={{ marginLeft: "10px", color: "#ff9800" }}>●</span>
-        )}
+        AI Chatbot
+        <span style={{ marginLeft: "10px", color: systemReady ? "#4CAF50" : "#ff9800" }}>
+          ●
+        </span>
       </div>
 
       {!level && !showInfo && <LevelSelector setLevel={setLevel} setShowInfo={setShowInfo} />}
@@ -663,14 +659,17 @@ const Chatbot = () => {
           <MessageBubble key={msg.id} sender={msg.sender} text={msg.text} sources={msg.sources} file={msg.file} />
         ))}
         {loading && <div className="loading-indicator">⏳ Processing...</div>}
+        {!systemReady && <div className="loading-indicator">🔄 Initializing AI system...</div>}
         <div ref={chatEndRef} />
       </div>
 
       <div className="chatbot-input-area">
-        <input type="file" onChange={handleFileUpload} accept=".pdf" disabled={loading} style={{ marginRight: "8px" }} />
+        <input type="file" onChange={handleFileUpload} accept=".pdf" disabled={loading} />
         <input
           type="text"
-          placeholder={level ? (systemReady ? "Ask a question..." : "System loading...") : "Select a level first"}
+          placeholder={
+            level ? (systemReady ? "Ask a question..." : "System loading...") : "Select a level first"
+          }
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
