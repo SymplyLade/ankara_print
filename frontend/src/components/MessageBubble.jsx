@@ -15,10 +15,12 @@
 
 
 import React from "react";
-
+import { useTranslation } from "react-i18next";
 import "../styles/MessageBubble.css";
 
 const MessageBubble = ({ sender, text, sources, file }) => {
+  const { t } = useTranslation();
+  
   return (
     <div
       className={`chatbot-message ${sender === "user" ? "user-message" : "bot-message"}`}
@@ -29,7 +31,7 @@ const MessageBubble = ({ sender, text, sources, file }) => {
       {sources && sources.length > 0 && (
         <div className="sources-container">
           <small style={{ marginTop: "8px", opacity: 0.8 }}>
-            <strong>📚 Sources:</strong>
+            <strong>{t("chatbot.sources")}</strong>
             <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
               {sources.map((source, idx) => (
                 <li key={idx} style={{ fontSize: "0.85em" }}>
@@ -50,7 +52,7 @@ const MessageBubble = ({ sender, text, sources, file }) => {
             rel="noopener noreferrer"
             style={{ color: "#2563eb", textDecoration: "underline", fontSize: "0.9em" }}
           >
-            📄 Open {file.name}
+            {t("chatbot.openFile", { fileName: file.name })}
           </a>
         </div>
       )}

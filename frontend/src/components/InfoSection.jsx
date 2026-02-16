@@ -22,12 +22,21 @@
 
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const InfoSection = ({ setShowInfo }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="info-section">
-      <p>Welcome! You can now start chatting with the AI tutor or upload files.</p>
-      <button onClick={() => setShowInfo(false)}>Close Info</button>
+      <h3>{t("chatbot.levelInfo")}</h3>
+      <ul>
+        <li><strong>{t("chatbot.beginner")}:</strong> {t("chatbot.beginnerDesc")}</li>
+        <li><strong>{t("chatbot.intermediate")}:</strong> {t("chatbot.intermediateDesc")}</li>
+        <li><strong>{t("chatbot.advanced")}:</strong> {t("chatbot.advancedDesc")}</li>
+      </ul>
+      <p>{t("chatbot.welcomeMessage")}</p>
+      <button onClick={() => setShowInfo(false)}>{t("chatbot.closeInfo")}</button>
     </div>
   );
 };

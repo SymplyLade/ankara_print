@@ -98,20 +98,29 @@
 
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const LevelSelector = ({ setLevel, setShowInfo }) => {
+  const { t } = useTranslation();
+  
   const handleSelect = (lvl) => {
     setLevel(lvl);
     setShowInfo(true); // optionally show info section after selection
   };
 
+  const levels = [
+    { key: "beginner", value: "Beginner" },
+    { key: "intermediate", value: "Intermediate" },
+    { key: "advanced", value: "Advanced" }
+  ];
+
   return (
     <div className="level-selector">
-      <h3>Select Your Level:</h3>
+      <h3>{t("chatbot.selectLevel")}</h3>
       <div className="level-buttons">
-        {["Beginner", "Intermediate", "Advanced"].map((lvl) => (
-          <button key={lvl} onClick={() => handleSelect(lvl)}>
-            {lvl}
+        {levels.map((lvl) => (
+          <button key={lvl.value} onClick={() => handleSelect(lvl.value)}>
+            {t(`chatbot.${lvl.key}`)}
           </button>
         ))}
       </div>

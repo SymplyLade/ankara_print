@@ -1,48 +1,49 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "../components/Navbar";
 import "../styles/Pages.css";
 
 const Contact = () => {
+  const { t } = useTranslation();
+
   return (
     <div>
       {/* <Navbar /> */}
 
       <div style={{ padding: "40px", maxWidth: "800px", margin: "auto", lineHeight: "1.8" }}>
-        <h1>Contact Us</h1>
+        <h1>{t("contact.title")}</h1>
 
         <p>
-          We'd love to hear from you! Whether you have questions about Ankara learning,
-          fashion, culture, or collaboration, feel free to reach out.
+          {t("contact.description")}
         </p>
 
-        <h2 style={{ marginTop: "30px" }}>📍 Our Contact Information</h2>
+        <h2 style={{ marginTop: "30px" }}>{t("contact.contactInfo")}</h2>
 
-        <p><strong>Name:</strong>Gbemisola Ololade Victoria</p>
-        <p><strong>Email:</strong> vgbemisola3@gmail.com</p>
-        <p><strong>Phone:</strong> +234 9033262020</p>
-        <p><strong>Location:</strong> Nigeria</p>
+        <p><strong>{t("contact.name")}:</strong> Gbemisola Ololade Victoria</p>
+        <p><strong>{t("contact.email")}:</strong> vgbemisola3@gmail.com</p>
+        <p><strong>{t("contact.phone")}:</strong> +234 9033262020</p>
+        <p><strong>{t("contact.location")}:</strong> Nigeria</p>
 
-        <h2 style={{ marginTop: "30px" }}>🌍 Social Media</h2>
+        <h2 style={{ marginTop: "30px" }}>{t("contact.socialMedia")}</h2>
 
         <p><strong>Instagram:</strong> @ankaralearning</p>
         <p><strong>Facebook:</strong> Ankara Learning</p>
         <p><strong>Twitter (X):</strong> @ankaralearning</p>
 
-        <h2 style={{ marginTop: "30px" }}>💬 Message</h2>
+        <h2 style={{ marginTop: "30px" }}>{t("contact.message")}</h2>
 
         <p>
-          You can contact us for:
+          {t("contact.contactFor")}
         </p>
         <ul>
-          <li>Learning support</li>
-          <li>Ankara fashion knowledge</li>
-          <li>Business or collaboration</li>
-          <li>General inquiries</li>
+          <li>{t("contact.learningSupport")}</li>
+          <li>{t("contact.fashionKnowledge")}</li>
+          <li>{t("contact.business")}</li>
+          <li>{t("contact.generalInquiries")}</li>
         </ul>
 
         <p style={{ marginTop: "20px" }}>
-          We aim to respond as quickly as possible. Thank you for being part of the
-          Ankara Learning community ❤️
+          {t("contact.response")}
         </p>
       </div>
     </div>

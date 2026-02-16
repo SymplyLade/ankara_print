@@ -186,11 +186,14 @@
 
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 import "../styles/Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const pathname = location.pathname;
 
@@ -209,7 +212,7 @@ const Navbar = () => {
         {/* Back button: show on all pages except home */}
         {pathname !== "/" && (
           <button className="back-btn" onClick={() => navigate(-1)}>
-            ← Back
+            {t("navbar.back")}
           </button>
         )}
 
@@ -224,17 +227,19 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-right">
-        <Link to="/" className="nav-link">Home</Link>
-        <Link to="/about" className="nav-link">About</Link>
-        <Link to="/gallery" className="nav-link">Gallery</Link>
-        <Link to="/contact" className="nav-link">Contact</Link>
+        <Link to="/" className="nav-link">{t("navbar.home")}</Link>
+        <Link to="/about" className="nav-link">{t("navbar.about")}</Link>
+        <Link to="/gallery" className="nav-link">{t("navbar.gallery")}</Link>
+        <Link to="/contact" className="nav-link">{t("navbar.contact")}</Link>
 
         {showAuthButtons && (
           <>
-            <Link to="/signup" className="nav-link signup-btn">Signup</Link>
-            <Link to="/login" className="nav-link login-btn">Login</Link>
+            <Link to="/signup" className="nav-link signup-btn">{t("navbar.signup")}</Link>
+            <Link to="/login" className="nav-link login-btn">{t("navbar.login")}</Link>
           </>
         )}
+
+        <LanguageSwitcher />
       </div>
     </nav>
   );

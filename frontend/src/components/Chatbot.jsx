@@ -690,6 +690,7 @@
 
 
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "../styles/Chatbot.css";
 import LevelSelector from "./LevelSelector";
 import InfoSection from "./InfoSection";
@@ -699,8 +700,9 @@ import BackButton from "./BackButton";
 const RAG_API_URL = import.meta.env.VITE_RAG_API_URL || "http://localhost:8001";
 
 const Chatbot = () => {
+  const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState([
-    { id: 1, sender: "bot", text: "Hi! 👋 I'm your assistant. How can I help you today?" }
+    { id: 1, sender: "bot", text: t("chatbot.welcome") }
   ]);
   const [input, setInput] = useState("");
   const [level, setLevel] = useState("");
@@ -708,15 +710,95 @@ const Chatbot = () => {
   const [loading, setLoading] = useState(false);
   const [systemReady, setSystemReady] = useState(false);
   const [welcomeShown, setWelcomeShown] = useState(false);
+
+  // Voice input state
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [listening, setListening] = useState(false);
+
   const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     checkSystemStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Initialize Web Speech API
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      if (!event.results || !event.results[0] || !event.results[0][0]) return;
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    setSpeechSupported(true);
+
+    return () => {
+      recognition.stop();
+    };
+  }, []);
+
+  const getSpeechLang = () => {
+    const code = i18n.language || "en";
+    switch (code) {
+      case "yo":
+        return "yo-NG";
+      case "ha":
+        return "ha-NG";
+      case "ig":
+        return "ig-NG";
+      case "pid":
+        // Pidgin often falls back to English in browsers
+        return "en-NG";
+      case "en":
+      default:
+        return "en-US";
+    }
+  };
+
+  const toggleListening = () => {
+    if (!speechSupported || !recognitionRef.current) return;
+
+    if (!listening) {
+      try {
+        recognitionRef.current.lang = getSpeechLang();
+        recognitionRef.current.start();
+        setListening(true);
+      } catch {
+        setListening(false);
+      }
+    } else {
+      recognitionRef.current.stop();
+      setListening(false);
+    }
+  };
 
   // 🔁 Keep checking backend until ready
   const checkSystemStatus = async () => {
@@ -749,7 +831,7 @@ const Chatbot = () => {
       const response = await fetch(`${RAG_API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userInput })
+        body: JSON.stringify({ message: userInput, language: i18n.language })
       });
 
       if (!response.ok) throw new Error();
@@ -766,7 +848,7 @@ const Chatbot = () => {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: "❌ Sorry, I couldn't process your message." }
+        { id: Date.now() + 1, sender: "bot", text: t("chatbot.messageError") }
       ]);
     } finally {
       setLoading(false);
@@ -779,7 +861,7 @@ const Chatbot = () => {
 
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), sender: "user", text: `📄 Uploading: ${file.name}...`, file }
+      { id: Date.now(), sender: "user", text: t("chatbot.uploading", { fileName: file.name }), file }
     ]);
     setLoading(true);
 
@@ -799,7 +881,7 @@ const Chatbot = () => {
         {
           id: Date.now() + 1,
           sender: "bot",
-          text: `✅ PDF uploaded! Created ${data.chunks_created} chunks.`
+          text: t("chatbot.uploadSuccess", { chunks: data.chunks_created })
         }
       ]);
 
@@ -807,7 +889,7 @@ const Chatbot = () => {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, sender: "bot", text: "❌ Failed to upload PDF." }
+        { id: Date.now() + 1, sender: "bot", text: t("chatbot.uploadFailed") }
       ]);
     } finally {
       setLoading(false);
@@ -820,7 +902,7 @@ const Chatbot = () => {
       <BackButton />
 
       <div className="chatbot-header">
-        AI Chatbot
+        {t("chatbot.title")}
         <span style={{ marginLeft: "10px", color: systemReady ? "#4CAF50" : "#ff9800" }}>
           ●
         </span>
@@ -833,26 +915,38 @@ const Chatbot = () => {
         {messages.map((msg) => (
           <MessageBubble key={msg.id} sender={msg.sender} text={msg.text} sources={msg.sources} file={msg.file} />
         ))}
-        {loading && <div className="loading-indicator">⏳ Processing...</div>}
-        {!systemReady && <div className="loading-indicator">🔄 Initializing AI system...</div>}
+        {loading && <div className="loading-indicator">{t("chatbot.processing")}</div>}
+        {!systemReady && <div className="loading-indicator">{t("chatbot.initializing")}</div>}
         <div ref={chatEndRef} />
       </div>
 
       <div className="chatbot-input-area">
         <input type="file" onChange={handleFileUpload} accept=".pdf" disabled={loading} />
-        <input
-          type="text"
-          placeholder={
-            level ? (systemReady ? "Ask a question..." : "System loading...") : "Select a level first"
-          }
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          disabled={!level || !systemReady || loading}
-        />
-        <button onClick={handleSend} disabled={!level || !systemReady || loading}>
-          {loading ? "Sending..." : "Send"}
-        </button>
+        <div className="chatbot-input-row">
+          <input
+            type="text"
+            placeholder={
+              level ? (systemReady ? t("chatbot.askQuestion") : t("chatbot.systemLoading")) : t("chatbot.selectLevelFirst")
+            }
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            disabled={!level || !systemReady || loading}
+          />
+          {speechSupported && (
+            <button
+              type="button"
+              className={`chatbot-mic-button ${listening ? "listening" : ""}`}
+              onClick={toggleListening}
+              disabled={!level || !systemReady || loading}
+            >
+              {listening ? "🎙️" : "🎤"}
+            </button>
+          )}
+          <button onClick={handleSend} disabled={!level || !systemReady || loading}>
+            {loading ? t("chatbot.sending") : t("chatbot.send")}
+          </button>
+        </div>
       </div>
     </div>
   );
