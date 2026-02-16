@@ -9,6 +9,7 @@ from typing import List
 from contextlib import asynccontextmanager
 
 from rag_system import create_default_rag  # Uses AnkaraPrintRAGSystem
+from auth import AuthService
 
 # Global RAG system reference (lazy loaded)
 rag_system = None
@@ -65,6 +66,7 @@ app.add_middleware(
 # -------------------
 class ChatMessage(BaseModel):
     message: str
+    language: str | None = "en"
 
 class ChatResponse(BaseModel):
     response: str
@@ -119,7 +121,24 @@ async def chat(message: ChatMessage):
     if rag_system is None:
         rag_system = create_default_rag()  # lazy load to save memory
     try:
-        response, sources = rag_system.get_response(message.message)
+        # Map frontend language codes to human-readable names for the prompt
+        lang_code = (message.language or "en").split("-")[0]
+        language_names = {
+            "en": "English",
+            "yo": "Yoruba",
+            "ha": "Hausa",
+            "ig": "Igbo",
+            "pid": "Nigerian Pidgin"
+        }
+        lang_name = language_names.get(lang_code, "English")
+
+        # Ask the model explicitly to respond in the selected language
+        augmented_question = (
+            f"Please answer the user's question STRICTLY in {lang_name} language.\n\n"
+            f"User question: {message.message}"
+        )
+
+        response, sources = rag_system.get_response(augmented_question)
         return ChatResponse(response=response, sources=sources)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
@@ -159,6 +178,88 @@ async def get_profile():
 @app.get("/api/test")
 async def test_endpoint():
     return {"status": "ok", "rag_system_ready": rag_system is not None}
+
+# -------------------
+# Authentication Models
+# -------------------
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: str = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class AuthResponse(BaseModel):
+    success: bool
+    user: dict = None
+    userToken: str = None
+    error: str = None
+    message: str = None
+
+# -------------------
+# Authentication Endpoints
+# -------------------
+@app.post("/api/auth/signup", response_model=AuthResponse)
+async def signup(request: SignupRequest):
+    """Register a new user"""
+    result = await AuthService.register_user(
+        email=request.email,
+        password=request.password,
+        name=request.name
+    )
+    if result["success"]:
+        return AuthResponse(
+            success=True,
+            user=result["user"],
+            userToken=result.get("userToken")
+        )
+    else:
+        raise HTTPException(status_code=400, detail=result.get("error", "Signup failed"))
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+async def login(request: LoginRequest):
+    """Login user"""
+    result = await AuthService.login_user(
+        email=request.email,
+        password=request.password
+    )
+    if result["success"]:
+        return AuthResponse(
+            success=True,
+            user=result["user"],
+            userToken=result.get("userToken")
+        )
+    else:
+        raise HTTPException(status_code=401, detail=result.get("error", "Login failed"))
+
+@app.post("/api/auth/logout")
+async def logout(userToken: str = None):
+    """Logout user"""
+    result = await AuthService.logout_user(userToken or "")
+    if result["success"]:
+        return {"success": True, "message": result.get("message", "Logged out")}
+    else:
+        raise HTTPException(status_code=400, detail=result.get("error", "Logout failed"))
+
+@app.get("/api/auth/me")
+async def get_current_user(userToken: str = None):
+    """Get current user"""
+    result = await AuthService.get_current_user(userToken or "")
+    if result["success"]:
+        return {"success": True, "user": result["user"]}
+    else:
+        raise HTTPException(status_code=401, detail=result.get("error", "Unauthorized"))
+
+@app.post("/api/auth/reset-password")
+async def reset_password(email: str):
+    """Reset password"""
+    result = await AuthService.reset_password(email)
+    if result["success"]:
+        return {"success": True, "message": result.get("message")}
+    else:
+        raise HTTPException(status_code=400, detail=result.get("error", "Reset failed"))
 
 # -------------------
 # Run on Render
