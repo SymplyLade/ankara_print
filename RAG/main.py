@@ -272,24 +272,32 @@
 
 
 
-
-
 """
 backend/main.py - Render-ready AnkaraPrint RAG API
 """
 import os
-import shutil
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 from contextlib import asynccontextmanager
-from datetime import datetime
 
-from rag_system import create_default_rag
+from rag_system import create_default_rag  # Uses AnkaraPrintRAGSystem
 from auth import AuthService
 
-# Global RAG system reference
+# Global RAG system reference (lazy loaded)
+rag_system = None
+
+app = FastAPI()
+
+
+@app.get("/status")
+def status():
+    return {
+        "ready": rag_system is not None
+    }
+
+
 rag_system = None
 
 @asynccontextmanager
@@ -302,14 +310,15 @@ async def lifespan(app: FastAPI):
         print("RAG system loaded successfully.")
     except Exception as e:
         print("RAG failed to load:", e)
-        rag_system = None
+        rag_system = None  # allow app to run anyway
 
     yield
     print("Shutting down...")
 
-# Create temp directory for uploads
-os.makedirs("./temp_uploads", exist_ok=True)
+app = FastAPI(lifespan=lifespan)
 
+
+# FastAPI app
 app = FastAPI(
     title="AnkaraPrint RAG API",
     description="Render-ready Simplified API",
@@ -331,7 +340,7 @@ app.add_middleware(
 # -------------------
 class ChatMessage(BaseModel):
     message: str
-    language: Optional[str] = "en"
+    language: str | None = "en"
 
 class ChatResponse(BaseModel):
     response: str
@@ -343,30 +352,6 @@ class SystemStatus(BaseModel):
     vector_db_ready: bool
     llm_connected: bool
     total_chunks: int
-
-class HealthCheck(BaseModel):
-    status: str
-    timestamp: str
-    version: str
-
-# -------------------
-# Authentication Models
-# -------------------
-class SignupRequest(BaseModel):
-    email: str
-    password: str
-    name: str = None
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-class AuthResponse(BaseModel):
-    success: bool
-    user: dict = None
-    userToken: str = None
-    error: str = None
-    message: str = None
 
 # -------------------
 # Endpoints
@@ -380,25 +365,8 @@ async def root():
             "chat": "POST /api/chat",
             "status": "GET /api/status",
             "upload": "POST /api/upload-pdf",
-            "profile": "GET /api/profile",
-            "health": "GET /health",
-            "auth": {
-                "signup": "POST /api/auth/signup",
-                "login": "POST /api/auth/login",
-                "logout": "POST /api/auth/logout",
-                "me": "GET /api/auth/me",
-                "reset-password": "POST /api/auth/reset-password"
-            }
+            "profile": "GET /api/profile"
         }
-    }
-
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "version": "2.0.0",
-        "rag_ready": rag_system is not None
     }
 
 @app.get("/api/status")
@@ -425,8 +393,9 @@ async def get_status():
 async def chat(message: ChatMessage):
     global rag_system
     if rag_system is None:
-        rag_system = create_default_rag()
+        rag_system = create_default_rag()  # lazy load to save memory
     try:
+        # Map frontend language codes to human-readable names for the prompt
         lang_code = (message.language or "en").split("-")[0]
         language_names = {
             "en": "English",
@@ -437,6 +406,7 @@ async def chat(message: ChatMessage):
         }
         lang_name = language_names.get(lang_code, "English")
 
+        # Ask the model explicitly to respond in the selected language
         augmented_question = (
             f"Please answer the user's question STRICTLY in {lang_name} language.\n\n"
             f"User question: {message.message}"
@@ -454,26 +424,18 @@ async def upload_pdf(file: UploadFile = File(...)):
         rag_system = create_default_rag()
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files allowed")
-    
-    temp_path = None
     try:
-        temp_path = f"./temp_uploads/temp_{file.filename}"
+        temp_path = f"temp_{file.filename}"
         content = await file.read()
         with open(temp_path, "wb") as f:
             f.write(content)
 
         chunks_created = rag_system.process_pdf(temp_path)
-        
-        return {
-            "success": True, 
-            "message": f"PDF processed: {file.filename}", 
-            "chunks_created": chunks_created
-        }
+        os.remove(temp_path)
+
+        return {"success": True, "message": f"PDF processed: {file.filename}", "chunks_created": chunks_created}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
 
 @app.get("/api/profile")
 async def get_profile():
@@ -490,6 +452,25 @@ async def get_profile():
 @app.get("/api/test")
 async def test_endpoint():
     return {"status": "ok", "rag_system_ready": rag_system is not None}
+
+# -------------------
+# Authentication Models
+# -------------------
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: str = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class AuthResponse(BaseModel):
+    success: bool
+    user: dict = None
+    userToken: str = None
+    error: str = None
+    message: str = None
 
 # -------------------
 # Authentication Endpoints
@@ -559,6 +540,6 @@ async def reset_password(email: str):
 # -------------------
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8001))
+    port = int(os.environ.get("PORT", 8001))  # Use Render's port
     print(f"\nStarting FastAPI server on port {port}...")
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port)  # remove --reload for production
