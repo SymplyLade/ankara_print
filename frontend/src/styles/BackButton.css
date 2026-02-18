@@ -1,0 +1,18 @@
+/* Back Button */
+.back-btn {
+  position: absolute;   /* anchor inside the header */
+  bottom: 60px;
+  right: 12px;          /* right-hand side */
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background: #34b7f1;  /* WhatsApp-style blue */
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #128c7e;  /* WhatsApp green tone */
+}

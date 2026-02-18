@@ -85,6 +85,7 @@
   color: white;
   border-radius: 12px 12px 0 0;
   text-align: center;
+  position:relative;
 }
 
 /* Messages */
@@ -219,3 +220,5 @@
   transform: scale(1.05);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
+
+
