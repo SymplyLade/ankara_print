@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/Auth.css";
 import BackButton from "../components/BackButton";
+import { loginUser } from "../api";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -22,13 +23,23 @@ const Login = () => {
       return;
     }
 
-    // ✅ Simulate login success
-    localStorage.setItem("token", "fake-user-token");
-    setMessage(t("auth.loginSuccessful"));
+    try {
+      const data = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 1500);
+      if (data?.userToken) {
+        localStorage.setItem("token", data.userToken);
+      }
+
+      setMessage(t("auth.loginSuccessful"));
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
+    } catch (error) {
+      setMessage(error.message || t("auth.loginFailed"));
+    }
   };
 
   const handleLogout = () => {
@@ -39,7 +50,6 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      {/* Back Button at the top */}
       <BackButton />
 
       <form onSubmit={handleSubmit} className="auth-form">
@@ -79,10 +89,9 @@ const Login = () => {
         </p>
       </div>
 
-      {/* Logout Button */}
       {localStorage.getItem("token") && (
         <button onClick={handleLogout} className="auth-logout">
-          {t("auth.login")}
+          {t("auth.loggedOut")}
         </button>
       )}
 

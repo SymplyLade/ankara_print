@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/Auth.css";
 import BackButton from "../components/BackButton";
+import { signupUser } from "../api";
 
 const Signup = () => {
   const { t } = useTranslation();
@@ -17,7 +18,7 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -25,14 +26,20 @@ const Signup = () => {
       return;
     }
 
-    // Simulate signup success (no backend)
-    setMessage(t("auth.signupSuccessful"));
-    setFormData({ email: "", password: "", confirmPassword: "" });
+    try {
+      await signupUser({
+        email: formData.email,
+        password: formData.password,
+      });
+      setMessage(t("auth.signupSuccessful"));
+      setFormData({ email: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      setMessage(error.message || t("auth.signupFailed"));
+    }
   };
 
   return (
     <div className="auth-container">
-      {/* Back Button at the top */}
       <BackButton />
 
       <form className="auth-form" onSubmit={handleSubmit}>
@@ -85,7 +92,6 @@ const Signup = () => {
           </p>
         )}
 
-        {/* Already have an account section */}
         <p className="auth-footer">
           {t("auth.alreadyHaveAccount")} <Link to="/login" className="auth-link">{t("auth.loginHere")}</Link>
         </p>

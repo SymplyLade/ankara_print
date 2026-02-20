@@ -652,7 +652,7 @@ class AnkaraPrintRAGSystem:
 
     # --------- GET RESPONSE ---------
     def get_response(self, question: str, session_id: str = "default") -> Tuple[str, List[str]]:
-        if not self.rag_chain:
+        if not self._ensure_ready():
             return ("RAG system not ready - load PDF and LLM first.", [])
         try:
             retrieved_docs = self.retriever.invoke(question)
@@ -679,13 +679,23 @@ class AnkaraPrintRAGSystem:
         self.session_data = {}
         print("Session data cleared")
 
+    def _ensure_ready(self) -> bool:
+        if self.rag_chain:
+            return True
+        if self.pdf_path and os.path.exists(self.pdf_path) and not self.vector_db_ready:
+            try:
+                self.process_pdf(self.pdf_path)
+            except Exception as e:
+                print(f"Auto-load failed: {e}")
+        return self.rag_chain is not None
+
 
 # --------- FACTORY FUNCTION ---------
 def create_default_rag():
     """Create RAG system but do not load PDF immediately"""
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     default_pdf = os.path.join(BASE_DIR, "Ankara Printing.pdf")
-    rag = AnkaraPrintRAGSystem()
+    rag = AnkaraPrintRAGSystem(default_pdf if os.path.exists(default_pdf) else None)
     if os.path.exists(default_pdf):
         print(f"Default PDF found: {default_pdf}")
         # optional: process lazily later
